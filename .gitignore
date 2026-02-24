@@ -9,6 +9,7 @@ env/
 ENV/
 
 # Data
+runs/detect/baseline_samples/
 data/raw/
 data/processed/
 *.mp4
