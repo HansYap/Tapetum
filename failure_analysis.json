@@ -1,0 +1,35 @@
+{
+  "model_name": "yolov8n",
+  "test_date": "2026-02-24 16:05:10",
+  "summary": {
+    "total_frames_processed": 394,
+    "frames_with_detections": 107,
+    "detection_rate": "27.2%",
+    "total_detections": 213,
+    "avg_detections_per_frame": "0.54",
+    "avg_confidence": "0.438",
+    "avg_processing_time_ms": "16.7"
+  },
+  "failure_analysis": {
+    "low_confidence_frames": 74,
+    "low_confidence_rate": "18.8%",
+    "probable_causes": [
+      "Tannin color shift reduces RGB contrast",
+      "Suspended particles create false positives",
+      "Reduced visibility causes missed detections",
+      "Model trained on clear-water datasets"
+    ]
+  },
+  "confidence_distribution": {
+    "min": 0.25179967284202576,
+    "max": 0.869507372379303,
+    "mean": 0.43776196884997015,
+    "std": 0.14484277609122734
+  },
+  "recommendations": [
+    "Fine-tune with blackwater-augmented training data",
+    "Use LoRA for parameter-efficient adaptation",
+    "Increase training on low-contrast scenarios",
+    "Consider ensemble with specialized detector"
+  ]
+}
