@@ -11,6 +11,7 @@ ENV/
 # Data
 runs/detect/baseline_samples/
 data/raw/
+data/synthetic/
 data/processed/
 *.mp4
 *.avi

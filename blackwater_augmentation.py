@@ -34,20 +34,20 @@ class BlackwaterAugmentation:
         
         img_float = image.astype(np.float32) / 255.0
         
-        tannin_r = 1.0 - (self.tannin_intensity * 0.2)  # Slight red reduction
-        tannin_g = 1.0 - (self.tannin_intensity * 0.3)  # More green absorption
-        tannin_b = 1.0 - (self.tannin_intensity * 0.6)  # Heavy blue absorptio
+        tannin_r = 1.0 - (self.tannin_intensity * 0.35)  # Slight red reduction
+        tannin_g = 1.0 - (self.tannin_intensity * 0.55)  # More green absorption
+        tannin_b = 1.0 - (self.tannin_intensity * 0.65)  # Heavy blue absorptio
         
         # opencv/numpy store images format: (height, width, channels)
-        img_float[:, :, 0] = img_float[:, :, 0] * tannin_r  # Red channel
+        img_float[:, :, 0] = img_float[:, :, 0] * tannin_b  # Blue channel
         img_float[:, :, 1] = img_float[:, :, 1] * tannin_g  # Green channel
-        img_float[:, :, 2] = img_float[:, :, 2] * tannin_b  # Blue channel
+        img_float[:, :, 2] = img_float[:, :, 2] * tannin_r  # Red channel
         
         # Add ambient brown/amber glow
-        amber_overlay = np.full_like(img_float, [0.35, 0.20, 0.15])  # RGB
+        amber_overlay = np.full_like(img_float, [0.15, 0.28, 0.42])  # RGB
         img_float = cv2.addWeighted(
             img_float, 1.0, 
-            amber_overlay, self.tannin_intensity * 0.3, 
+            amber_overlay, self.tannin_intensity * 0.6, 
             0
         )
         
@@ -60,14 +60,14 @@ class BlackwaterAugmentation:
         """
          # Reduce overall contrast
         alpha = 1.0 - (self.contrast_reduction * 0.5)
-        beta = 128 * self.contrast_reduction
+        beta = 40 * self.contrast_reduction
         
         adjusted = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
         
-        fog = np.ones_like(image) * (50 + 50 * self.turbidity)
+        fog = np.ones_like(image) * (25 + 35 * self.turbidity)
         fogged = cv2.addWeighted(
-            adjusted, 1.0 - (self.turbidity * 0.4),
-            fog.astype(np.uint8), self.turbidity * 0.4,
+            adjusted, 1.0 - (self.turbidity * 0.7),
+            fog.astype(np.uint8), self.turbidity * 0.7,
             0
         )
         
@@ -110,11 +110,24 @@ class BlackwaterAugmentation:
         """
         Apply full blackwater transformation pipeline.
         """
+        lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+        lab[:,:,2] = cv2.add(lab[:,:,2], int(15 * self.tannin_intensity))  # shift toward red/yellow
+        image = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+        
         # Step 1: Tannin color shift
         transformed = self.apply_tannin_filter(image)
         
+        hsv = cv2.cvtColor(transformed, cv2.COLOR_BGR2HSV)
+        hsv[:,:,1] = np.clip(hsv[:,:,1] * (1 - self.turbidity*0.3), 0, 255)
+        transformed = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        
         # Step 2: Turbidity and contrast reduction
         transformed = self.apply_turbidity(transformed)
+        
+        h, w = transformed.shape[:2]
+        depth = np.linspace(0, 1, h).reshape(h,1,1)
+        blur = cv2.GaussianBlur(transformed, (5,5), 0)
+        transformed = (transformed*(1-depth*self.turbidity) + blur*(depth*self.turbidity)).astype(np.uint8)
         
         # Step 3: Add suspended particles
         transformed = self.add_suspended_particles(transformed)
@@ -186,7 +199,6 @@ if __name__ == "__main__":
         print(f"Error: Could not load image {sys.argv[1]}")
         sys.exit(1)
         
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     
     # Create augmentor with different intensity levels
     intensities = [0.3, 0.5, 0.7]
@@ -198,10 +210,9 @@ if __name__ == "__main__":
             contrast_reduction=intensity * 0.5
         )
         
-        result_rgb = augmentor(img_rgb)
-        result_bgr = cv2.cvtColor(result_rgb, cv2.COLOR_RGB2BGR)
+        result = augmentor(img)
         output_path = f"blackwater_example_{i+1}_intensity_{intensity}.jpg"
-        cv2.imwrite(output_path, result_bgr)
+        cv2.imwrite(output_path, result)
         print(f"✓ Saved: {output_path}")
     
     print("\n✅ Augmentation demo complete!")
