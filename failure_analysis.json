@@ -1,18 +1,18 @@
 {
-  "model_name": "yolov8n",
-  "test_date": "2026-02-24 16:05:10",
+  "model_name": "models/warmup_finetune/weights/best.pt",
+  "test_date": "2026-02-26 17:45:19",
   "summary": {
-    "total_frames_processed": 394,
-    "frames_with_detections": 107,
-    "detection_rate": "27.2%",
-    "total_detections": 213,
-    "avg_detections_per_frame": "0.54",
-    "avg_confidence": "0.438",
-    "avg_processing_time_ms": "16.7"
+    "total_frames_processed": 300,
+    "frames_with_detections": 194,
+    "detection_rate": "64.7%",
+    "total_detections": 794,
+    "avg_detections_per_frame": "2.65",
+    "avg_confidence": "0.440",
+    "avg_processing_time_ms": "22.5"
   },
   "failure_analysis": {
-    "low_confidence_frames": 74,
-    "low_confidence_rate": "18.8%",
+    "low_confidence_frames": 61,
+    "low_confidence_rate": "20.3%",
     "probable_causes": [
       "Tannin color shift reduces RGB contrast",
       "Suspended particles create false positives",
@@ -21,10 +21,10 @@
     ]
   },
   "confidence_distribution": {
-    "min": 0.25179967284202576,
-    "max": 0.869507372379303,
-    "mean": 0.43776196884997015,
-    "std": 0.14484277609122734
+    "min": 0.25011134147644043,
+    "max": 0.8527829647064209,
+    "mean": 0.43984181645985515,
+    "std": 0.1506156802712178
   },
   "recommendations": [
     "Fine-tune with blackwater-augmented training data",

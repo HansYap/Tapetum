@@ -29,21 +29,23 @@ class BaselineModelTester:
         
     def load_model(self):
         """Load the specified model."""
+        from ultralytics import YOLO
         print(f"Loading {self.model_name}...")
         
-        if self.model_name.startswith("yolo"):
-            from ultralytics import YOLO
-            # Start with pre-trained YOLO as baseline
-            self.model = YOLO('yolov8n.pt')  # Nano model for speed
-            print("  YOLOv8 loaded (COCO weights)")
-            
-        # Add Florence-2 support when available
-        # elif self.model_name == "florence2":
-        #     from transformers import AutoProcessor, AutoModelForCausalLM
-        #     self.model = AutoModelForCausalLM.from_pretrained("microsoft/Florence-2")
+        self.model = YOLO(self.model_name)
         
-        else:
-            raise ValueError(f"Unknown model: {self.model_name}")
+        # if self.model_name.startswith("yolo"):
+        #     # Start with pre-trained YOLO as baseline
+        #     self.model = YOLO('yolov8n.pt')  # Nano model for speed
+        #     print("  YOLOv8 loaded (COCO weights)")
+            
+        # # Add Florence-2 support when available
+        # # elif self.model_name == "florence2":
+        # #     from transformers import AutoProcessor, AutoModelForCausalLM
+        # #     self.model = AutoModelForCausalLM.from_pretrained("microsoft/Florence-2")
+        
+        # else:
+        #     raise ValueError(f"Unknown model: {self.model_name}")
     
     
     def process_video(
@@ -117,33 +119,31 @@ class BaselineModelTester:
     
     def _run_inference(self, frame: np.ndarray) -> List[Dict[str, Any]]:
         """Run model inference on a single frame."""
-        if self.model_name.startswith("yolo"):
-            results = self.model(frame, verbose=False)[0]
-            
-            detections = []
-            for box in results.boxes:
-                detections.append({
-                    'bbox': box.xyxy[0].cpu().numpy().tolist(),
-                    'confidence': float(box.conf[0]),
-                    'class_id': int(box.cls[0]),
-                    'class_name': results.names[int(box.cls[0])]
-                })
-            
-            if len(detections) > 0:
-                # 1. Ensure directory exists (prevents FileNotFoundError)
-                save_path = Path('runs/detect/baseline_samples')
-                save_path.mkdir(parents=True, exist_ok=True)
-                
-                # 2. Use a unique filename (using timestamp to avoid overwrites)
-                # Results.save() takes 'filename' as the argument
-                fname = str(save_path / f"hit_{int(time.time()*1000)}.jpg")
-                results.save(filename=fname)
-            
-            return detections
         
-        return []
-    
-    
+        results = self.model(frame, verbose=False)[0]
+        
+        detections = []
+        for box in results.boxes:
+            detections.append({
+                'bbox': box.xyxy[0].cpu().numpy().tolist(),
+                'confidence': float(box.conf[0]),
+                'class_id': int(box.cls[0]),
+                'class_name': results.names[int(box.cls[0])]
+            })
+        
+        if len(detections) > 0:
+            # 1. Ensure directory exists (prevents FileNotFoundError)
+            save_path = Path('runs/detect/baseline_samples')
+            save_path.mkdir(parents=True, exist_ok=True)
+            
+            # 2. Use a unique filename (using timestamp to avoid overwrites)
+            # Results.save() takes 'filename' as the argument
+            fname = str(save_path / f"hit_{int(time.time()*1000)}.jpg")
+            results.save(filename=fname)
+        
+        return detections
+        
+       
     def generate_failure_report(self, output_path: str = "failure_analysis.json"):
         """
         Generate comprehensive failure analysis report.

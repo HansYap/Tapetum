@@ -10,14 +10,13 @@ ENV/
 
 # Data
 runs/detect/baseline_samples/
-data/raw/
-data/synthetic/
-data/processed/
+data/
 *.mp4
 *.avi
 *.mov
 
 # Models
+models/
 models/checkpoints/
 *.pth
 *.pt

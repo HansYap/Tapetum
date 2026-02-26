@@ -5,7 +5,8 @@ from typing import List, Tuple
 import json
 from tqdm import tqdm
 import random
-from blackwater_augmentation import BlackwaterAugmentation, create_training_augmentation
+from blackwater_augmentation import BlackwaterAugmentation
+import shutil
 
 class SyntheticDatasetGenerator:
     """
@@ -26,6 +27,7 @@ class SyntheticDatasetGenerator:
     def generate_from_directory(
         self,
         source_dir: str,
+        label_dir: str,
         num_variations: int = 5,
         tannin_range: Tuple[float, float] = (0.55, 0.9)
     ):
@@ -36,6 +38,8 @@ class SyntheticDatasetGenerator:
         -----------
         source_dir : str
             Directory containing source images
+        laebl_dir : str
+            Directory containing image labels
         num_variations : int
             How many blackwater variations to create per source image
         tannin_range : tuple
@@ -44,14 +48,11 @@ class SyntheticDatasetGenerator:
         source_path = Path(source_dir)
         image_files = list(source_path.glob("*.jpg")) + list(source_path.glob("*.png"))
         
-        if not image_files:
-            print(f"❌ No images found in {source_dir}")
-            return
+        label_path = Path(label_dir)
         
-        print(f"🎨 Generating synthetic blackwater dataset...")
-        print(f"   Source images: {len(image_files)}")
-        print(f"   Variations per image: {num_variations}")
-        print(f"   Total outputs: {len(image_files) * num_variations}")
+        if not image_files:
+            print(f"No images found in {source_dir}")
+            return
         
         dataset_info = {
             "source_directory": str(source_dir),
@@ -68,6 +69,9 @@ class SyntheticDatasetGenerator:
                 if img is None:
                     print(f"⚠️  Could not load {img_file}")
                     continue
+                
+                label_file = label_path / f"{img_file.stem}.txt"
+                label_exists = label_file.exists()
                 
                 # Generate variations
                 for var_idx in range(num_variations):
@@ -91,6 +95,12 @@ class SyntheticDatasetGenerator:
                     output_name = f"{img_file.stem}_var{var_idx:02d}.jpg"
                     output_path = self.images_dir / output_name
                     cv2.imwrite(str(output_path), augmented)
+                    
+                    if label_exists:
+                        output_label_path = self.labels_dir / f"{img_file.stem}_var{var_idx:02d}.txt"
+                        shutil.copy(label_file, output_label_path)
+                    else:
+                        print(f"⚠️ Missing label for {img_file.name}")
                     
                     # Record metadata
                     dataset_info["generated_images"].append({
@@ -190,6 +200,7 @@ def main():
     
     parser = argparse.ArgumentParser(description="Generate synthetic blackwater datasets")
     parser.add_argument("--source-dir", type=str, help="Directory with clear-water fish images")
+    parser.add_argument("--label-dir", type=str, help="Directory with clear-water fish image labels")
     parser.add_argument("--mini-tank-video", type=str, help="Mini-tank pilot video")
     parser.add_argument("--num-variations", type=int, default=5, help="Variations per image")
     parser.add_argument("--output-dir", type=str, default="data/synthetic", help="Output directory")
@@ -202,6 +213,7 @@ def main():
     if args.source_dir:
         generator.generate_from_directory(
             source_dir=args.source_dir,
+            label_dir=args.label_dir,
             num_variations=args.num_variations
         )
     
